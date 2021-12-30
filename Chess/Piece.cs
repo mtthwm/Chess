@@ -175,38 +175,41 @@ namespace Chess
 
 		public bool CheckDanger(int x, int y, Grid<Piece> grid)
         {
-			List<RayHit> hits = new List<RayHit>();
+			List<Piece> enemies = grid.FindAll(piece => piece.team == team);
 
-			// Up
-			hits.Add(IterativeRay(x, y, grid, x => x, y => y - 1));
-			// Down
-			hits.Add(IterativeRay(x, y, grid, x => x, y => y + 1));
-			// Left
-			hits.Add(IterativeRay(x, y, grid, x => x - 1, y => y));
-			// Right
-			hits.Add(IterativeRay(x, y, grid, x => x + 1, y => y));
-			// Up Right
-			hits.Add(IterativeRay(x, y, grid, x => x + 1, y => y - 1));
-			// Down Left
-			hits.Add(IterativeRay(x, y, grid, x => x - 1, y => y + 1));
-			// Up Left
-			hits.Add(IterativeRay(x, y, grid, x => x - 1, y => y - 1));
-			// Down Right
-			hits.Add(IterativeRay(x, y, grid, x => x + 1, y => y + 1));
 
-			foreach (RayHit hit in hits)
-            {
-				if (hit.piece != null && hit.piece.team != team)
-                {
-					Move danger_move = hit.piece.GetMoveSet(hit.x, hit.y, grid).Find(move => move.target_x == x && move.target_y == y);
-					if (danger_move != null)
-                    {
-						return false;
-                    }
-                }
-            }
+			//List<RayHit> hits = new List<RayHit>();
 
-			return true;
+			//// Up
+			//hits.Add(IterativeRay(x, y, grid, x => x, y => y - 1));
+			//// Down
+			//hits.Add(IterativeRay(x, y, grid, x => x, y => y + 1));
+			//// Left
+			//hits.Add(IterativeRay(x, y, grid, x => x - 1, y => y));
+			//// Right
+			//hits.Add(IterativeRay(x, y, grid, x => x + 1, y => y));
+			//// Up Right
+			//hits.Add(IterativeRay(x, y, grid, x => x + 1, y => y - 1));
+			//// Down Left
+			//hits.Add(IterativeRay(x, y, grid, x => x - 1, y => y + 1));
+			//// Up Left
+			//hits.Add(IterativeRay(x, y, grid, x => x - 1, y => y - 1));
+			//// Down Right
+			//hits.Add(IterativeRay(x, y, grid, x => x + 1, y => y + 1));
+
+			//foreach (RayHit hit in hits)
+   //         {
+			//	if (hit.piece != null && hit.piece.team != team)
+   //             {
+			//		Move danger_move = hit.piece.GetMoveSet(hit.x, hit.y, grid).Find(move => move.target_x == x && move.target_y == y);
+			//		if (danger_move != null)
+   //                 {
+			//			return false;
+   //                 }
+   //             }
+   //         }
+
+			//return true;
 		}
 
 		public void RegisterMove (Move move)
