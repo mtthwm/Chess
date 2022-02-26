@@ -6,6 +6,24 @@ namespace Chess
 
 	public class Game
 	{
+		public enum GameState
+        {
+			DRAW,
+			WINNER,
+			UNDECIDED,
+        }
+		public struct Result {
+			public Result (GameState state = GameState.UNDECIDED, Teams? team = null)
+            {
+				this.state = state;
+				this.team = team;
+            }
+
+			public Teams? team;
+			public GameState state;
+        }
+		public Result result { get; private set; }
+
 		public Grid<Piece> grid;
 		List<Piece> captured = new List<Piece>();
 		Player[] players = new Player[2];
@@ -22,10 +40,23 @@ namespace Chess
 				active_player_index = Array.IndexOf(players, value);
             }
         }
+		Player Inactive_Player
+		{
+			get
+			{
+				return players[(active_player_index + players.Length + 1) % players.Length];
+			}
+		}
 
 		public Game()
 		{
+			result = new Result(GameState.UNDECIDED);
+			Console.WriteLine(result.state);
+
 			StandardBoard();
+
+			//grid.Set(3, 0, null);
+			//grid.Set(3, 7, null);
 
 			Pawn pawn = new Pawn(Teams.WHITE);
 
@@ -39,16 +70,25 @@ namespace Chess
 
 		public void TakeTurn (int start_x, int start_y, int target_x, int target_y)
         {
-			Move legal_move = ValidateMove(start_x, start_y, target_x, target_y);
-			if (legal_move != null)
+			Console.WriteLine(result.state);
+			if (result.state == GameState.UNDECIDED )
             {
-				bool player_can_move = ValidateMoveWithGameState(legal_move);
-				if (player_can_move)
+				Move legal_move = ValidateMove(start_x, start_y, target_x, target_y);
+				if (legal_move != null)
 				{
-					FulfillMove(legal_move);
-					SwitchPlayer();
+					bool player_can_move = ValidateMoveWithGameState(legal_move);
+					if (player_can_move)
+					{
+						FulfillMove(legal_move);
+						SwitchPlayer();
+						UpdateResult();
+					}
 				}
 			}
+            else
+            {
+				Console.WriteLine("UHHH");
+            }
         }
 
         public override string ToString()
@@ -98,12 +138,103 @@ namespace Chess
 			grid.Set(4, 7, new Queen(Teams.WHITE));
 		}
 
+		private void UpdateResult()
+		{
+			bool active_player_in_check = InCheck(Active_Player.team);
+			bool active_player_can_move = HasMoves(Active_Player.team);
+
+			bool inactive_player_in_check = InCheck(Inactive_Player.team);
+			bool inactive_player_can_move = HasMoves(Inactive_Player.team);
+
+			Console.WriteLine("RESULT UPDATE" + active_player_in_check + " " + active_player_can_move + " " + inactive_player_in_check + " " + inactive_player_can_move);
+
+			if (!active_player_can_move)
+			{
+				if (active_player_in_check)
+				{
+					result = new Result(GameState.WINNER, Active_Player.team);
+				}
+				else
+				{
+					result = new Result(GameState.DRAW);
+				}
+			}
+
+			if (!inactive_player_can_move)
+			{
+				if (inactive_player_in_check)
+				{
+					result = new Result(GameState.WINNER, Inactive_Player.team);
+				}
+				else
+				{
+					result = new Result(GameState.DRAW);
+				}
+			}
+		} 
+
 		private void SwitchPlayer ()
         {
 			active_player_index = (active_player_index + players.Length + 1) % players.Length;
         }
 
-		//<summary>Move pieces based on a move. This method performs no validation.</summary>
+		private King GetKing (Teams team)
+        {
+			return grid.Find(piece => piece != null && piece.team == team && piece.GetType() == typeof(King)) as King;
+		}
+
+		private bool InCheck (Teams team)
+        {
+			King king_piece = GetKing(team);
+			Tuple<int, int> coords = grid.CoordinatesOf(king_piece);
+			return king_piece.CheckDanger(coords.Item1, coords.Item2, grid);
+
+        }
+
+		private List<Move> FilterKingMoves (List<Move> moves)
+        {
+			return moves.FindAll(move => move.moving_piece.CheckDanger(move.target_x, move.target_y, grid));
+
+		}
+
+		private bool HasMoves (Teams team)
+        {
+			for (int y = 0; y < grid.Size; y++)
+            {
+				for (int x = 0; x < grid.Size; x++)
+                {
+					Piece piece = grid.Get(x, y);
+					if (piece != null && piece.team == team)
+                    {
+						List<Move> moves = piece.GetMoveSet(x, y, grid);
+						if (piece.GetType() == typeof(King))
+                        {
+							moves = FilterKingMoves(moves);
+                        }
+						if (moves.Count > 0)
+                        {
+							return true;
+                        }							
+                    }
+                }
+            }
+			return false;
+        }
+
+		private bool KingCanMove (Teams team)
+        {
+			King king_piece = GetKing(team);
+			Tuple<int, int> coords = grid.CoordinatesOf(king_piece);
+			List<Move> moves = king_piece.GetMoveSet(coords.Item1, coords.Item2, grid);
+			moves = FilterKingMoves(moves);
+			return moves.Count > 0;
+        }
+
+		//<summary>
+		//Move pieces based on a move. 
+		//This method performs no 
+		//validation.
+		//</summary>
 		private void FulfillMove (Move move)
         {
 			if (move.capturing != null)
@@ -136,6 +267,11 @@ namespace Chess
 			Piece target_piece = grid.Get(target_x, target_y);
 
 			List<Move> possible_moves = start_piece.GetMoveSet(start_x, start_y, grid);
+
+			if (start_piece.GetType() == typeof(King))
+            {
+				possible_moves = FilterKingMoves(possible_moves);
+            }
 
 			return possible_moves.Find(move => move.target_x == target_x && move.target_y == target_y);
         }

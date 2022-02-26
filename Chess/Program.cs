@@ -18,7 +18,7 @@ namespace Chess
             Console.WriteLine(game);
             game.TakeTurn(1, 3, 2, 2);
             Console.WriteLine(game);
-            Console.WriteLine(game.grid.Get(3, 1).CheckDanger(3, 1, game.grid));
+            Console.WriteLine(game.grid.Get(7, 1).CheckDanger(7, 1, game.grid));
         }
     }
 }
