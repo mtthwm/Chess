@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Chess
 {
-
+	// Quick Test
 	public class Game
 	{
 		public enum GameState
